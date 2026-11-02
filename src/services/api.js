@@ -1,7 +1,5 @@
-const BASE_URL = 'http://localhost:8000/api/v1'
-
 async function request(path, options = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`/api/v1${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
