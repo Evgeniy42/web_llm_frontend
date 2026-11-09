@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { get, post } from '../../src/services/api'
-import { register, login, getUserById } from '../../src/services/userService'
+import { register, login, getUserById, logout } from '../../src/services/userService'
 
 vi.mock('../../src/services/api', () => ({
   post: vi.fn(),
@@ -32,5 +32,13 @@ describe('userService', () => {
     await getUserById(42)
 
     expect(get).toHaveBeenCalledWith('/user/42')
+  })
+
+  it('logout отправляет POST на /user/logout с refresh-токеном', async () => {
+    post.mockResolvedValue(null)
+
+    await logout('jwt-refresh-token')
+
+    expect(post).toHaveBeenCalledWith('/user/logout', { refresh_token: 'jwt-refresh-token' })
   })
 })

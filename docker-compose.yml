@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: web-llm-frontend:latest
+    container_name: web-llm-frontend
+    ports:
+      - "8090:80"
+    environment:
+      # Куда проксировать /api/v1 (backend, запущенный на хосте)
+      BACKEND_URL: http://host.docker.internal:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

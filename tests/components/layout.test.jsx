@@ -1,15 +1,21 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import Header from '../../src/components/Header'
 import Footer from '../../src/components/Footer'
 
 describe('Header', () => {
-  it('показывает логотип и кнопки авторизации', () => {
-    render(<Header />)
+  it('показывает логотип и ссылки авторизации', () => {
+    render(
+      <MemoryRouter>
+        <Header />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByText('Чат с LLM')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Вход' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Регистрация' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Чат с LLM/ })).toHaveAttribute('href', '/chat')
+    expect(screen.getByRole('link', { name: 'Вход' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Регистрация' })).toHaveAttribute('href', '/register')
   })
 })
 

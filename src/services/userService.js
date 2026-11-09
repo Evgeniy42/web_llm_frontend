@@ -11,3 +11,7 @@ export async function login({ email, password }) {
 export async function getUserById(userId) {
   return get(`/user/${userId}`)
 }
+
+export async function logout(refreshToken) {
+  return post('/user/logout', { refresh_token: refreshToken })
+}

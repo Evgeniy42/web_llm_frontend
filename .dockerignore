@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.idea
+.agents
+tests
+*.log
+screenshot_check
+Dockerfile
+docker-compose.yml
+.dockerignore
