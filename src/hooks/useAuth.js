@@ -8,6 +8,8 @@ import {
   subscribeSession,
   getSessionSnapshot,
   isSessionActive,
+  hasRole,
+  ROLE_VIP_USER,
   saveSession,
   clearSession,
 } from '../services/session'
@@ -15,6 +17,9 @@ import {
 export function useAuth() {
   const session = useSyncExternalStore(subscribeSession, getSessionSnapshot)
   const isAuthenticated = isSessionActive(session)
+  // Роль зашита в JWT снимком на момент входа: после оформления подписки
+  // она появится здесь только после повторного входа
+  const hasSubscription = isAuthenticated && hasRole(ROLE_VIP_USER, session)
 
   // Автоматический выход, когда истекает access-токен
   useEffect(() => {
@@ -59,6 +64,7 @@ export function useAuth() {
   return {
     user: isAuthenticated ? session.user : null,
     isAuthenticated,
+    hasSubscription,
     login,
     register,
     logout,

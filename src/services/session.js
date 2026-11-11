@@ -39,6 +39,38 @@ export function getAccessToken() {
   return session.accessToken
 }
 
+// Realm-роль Keycloak пользователя с подпиской (зашита в JWT при входе)
+export const ROLE_VIP_USER = 'vip_user'
+
+// Декодирует payload JWT без проверки подписи — подпись уже проверяет backend
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    // atob отдаёт байты строкой — восстанавливаем UTF-8 перед JSON.parse
+    const json = decodeURIComponent(
+      Array.from(atob(base64))
+        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)
+        .join(''),
+    )
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+// Роли из claim realm_access.roles JWT активной сессии
+export function getSessionRoles(current = session) {
+  if (!isSessionActive(current)) return []
+  const payload = decodeJwtPayload(current.accessToken)
+  return payload?.realm_access?.roles ?? []
+}
+
+export function hasRole(role, current = session) {
+  return getSessionRoles(current).includes(role)
+}
+
 // Принимает UserAuthResponseDTO бэкенда и сохраняет сессию.
 export function saveSession(auth) {
   session = {

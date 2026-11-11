@@ -15,3 +15,7 @@ export async function getUserById(userId) {
 export async function logout(refreshToken) {
   return post('/user/logout', { refresh_token: refreshToken })
 }
+
+export async function subscribe() {
+  return post('/user/subscription')
+}

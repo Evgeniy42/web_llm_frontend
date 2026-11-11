@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { get, post } from '../../src/services/api'
-import { register, login, getUserById, logout } from '../../src/services/userService'
+import { register, login, getUserById, logout, subscribe } from '../../src/services/userService'
 
 vi.mock('../../src/services/api', () => ({
   post: vi.fn(),
@@ -40,5 +40,13 @@ describe('userService', () => {
     await logout('jwt-refresh-token')
 
     expect(post).toHaveBeenCalledWith('/user/logout', { refresh_token: 'jwt-refresh-token' })
+  })
+
+  it('subscribe отправляет POST на /user/subscription', async () => {
+    post.mockResolvedValue({ message: 'Подписка оформлена' })
+
+    await subscribe()
+
+    expect(post).toHaveBeenCalledWith('/user/subscription')
   })
 })

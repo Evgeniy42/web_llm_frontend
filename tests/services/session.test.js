@@ -6,7 +6,17 @@ import {
   getAccessToken,
   isSessionActive,
   subscribeSession,
+  getSessionRoles,
+  hasRole,
+  ROLE_VIP_USER,
 } from '../../src/services/session'
+
+// Собирает ненастоящий JWT с заданными realm-ролями (подпись не проверяется на клиенте)
+function makeJwt(roles = []) {
+  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+  const payload = btoa(JSON.stringify({ sub: 'user-uuid', realm_access: { roles } }))
+  return `${header}.${payload}.signature`
+}
 
 const authResponse = {
   id: 1,
@@ -78,5 +88,22 @@ describe('session', () => {
     expect(listener).toHaveBeenCalledTimes(1)
 
     unsubscribe()
+  })
+
+  it('getSessionRoles извлекает роли из realm_access.roles JWT', () => {
+    saveSession({ ...authResponse, access_token: makeJwt(['user', ROLE_VIP_USER]) })
+
+    expect(getSessionRoles()).toEqual(['user', ROLE_VIP_USER])
+    expect(hasRole(ROLE_VIP_USER)).toBe(true)
+    expect(hasRole('admin')).toBe(false)
+  })
+
+  it('без сессии или с битым токеном ролей нет', () => {
+    expect(getSessionRoles()).toEqual([])
+
+    saveSession({ ...authResponse, access_token: 'not-a-jwt' })
+
+    expect(getSessionRoles()).toEqual([])
+    expect(hasRole(ROLE_VIP_USER)).toBe(false)
   })
 })
