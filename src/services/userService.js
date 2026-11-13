@@ -12,6 +12,13 @@ export async function getUserById(userId) {
   return get(`/user/${userId}`)
 }
 
+// Профиль текущего пользователя по Bearer из сохранённой сессии.
+// Внимание: на странице /auth/callback эта функция НЕ используется —
+// там сессии ещё нет, поэтому профиль запрашивается прямым fetch с токеном из hash
+export async function getMe() {
+  return get('/user/me')
+}
+
 export async function logout(refreshToken) {
   return post('/user/logout', { refresh_token: refreshToken })
 }
