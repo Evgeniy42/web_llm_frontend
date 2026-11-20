@@ -1,20 +1,18 @@
-import { getAccessToken, clearSession } from './session'
+import { clearSession } from './session'
 
+// Авторизация — по HttpOnly-куке, которую backend ставит после входа через Keycloak.
+// Поэтому все запросы идут с credentials: 'include' и БЕЗ заголовка Authorization.
 async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers }
-
-  const token = getAccessToken()
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
 
   const response = await fetch(`/api/v1${path}`, {
     ...options,
     headers,
+    credentials: 'include',
   })
 
-  // Токен отклонён сервером — сессия недействительна
-  if (response.status === 401 && token) {
+  // Куки сессии недействительны — сбрасываем локальный профиль
+  if (response.status === 401) {
     clearSession()
   }
 
@@ -40,6 +38,6 @@ export function get(path) {
 export function post(path, data) {
   return request(path, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: data === undefined ? undefined : JSON.stringify(data),
   })
 }

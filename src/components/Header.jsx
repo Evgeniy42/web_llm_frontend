@@ -11,7 +11,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/chat')
+    navigate('/login')
   }
 
   const handleSubscribe = async () => {
@@ -73,11 +73,8 @@ export default function Header() {
           </div>
         ) : (
           <div className="header__auth">
-            <Link to="/login" className="btn btn--ghost">
+            <Link to="/login" className="btn btn--primary">
               Вход
-            </Link>
-            <Link to="/register" className="btn btn--primary">
-              Регистрация
             </Link>
           </div>
         )}

@@ -3,29 +3,17 @@ import {
   saveSession,
   clearSession,
   getSessionSnapshot,
-  getAccessToken,
   isSessionActive,
   subscribeSession,
-  getSessionRoles,
   hasRole,
   ROLE_VIP_USER,
 } from '../../src/services/session'
 
-// Собирает ненастоящий JWT с заданными realm-ролями (подпись не проверяется на клиенте)
-function makeJwt(roles = []) {
-  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const payload = btoa(JSON.stringify({ sub: 'user-uuid', realm_access: { roles } }))
-  return `${header}.${payload}.signature`
-}
-
-const authResponse = {
+const profile = {
   id: 1,
   username: 'Тест',
   email: 'test@example.com',
-  access_token: 'jwt-access-token',
-  token_type: 'Bearer',
-  expires_in: 3600,
-  refresh_token: 'jwt-refresh-token',
+  roles: ['user'],
 }
 
 describe('session', () => {
@@ -34,39 +22,35 @@ describe('session', () => {
     localStorage.clear()
   })
 
-  it('saveSession маппит UserAuthResponseDTO в сессию', () => {
-    const session = saveSession(authResponse)
+  it('saveSession сохраняет профиль пользователя', () => {
+    const session = saveSession(profile)
 
-    expect(session.user).toEqual({ id: 1, username: 'Тест', email: 'test@example.com' })
-    expect(session.accessToken).toBe('jwt-access-token')
-    expect(session.refreshToken).toBe('jwt-refresh-token')
-    expect(session.expiresAt).toBeGreaterThan(Date.now())
+    expect(session).toEqual(profile)
+    expect(getSessionSnapshot()).toEqual(profile)
   })
 
-  it('сохраняет сессию в localStorage', () => {
-    saveSession(authResponse)
+  it('сохраняет в localStorage только профиль, без токенов', () => {
+    saveSession(profile)
 
     const raw = localStorage.getItem('web-llm:session')
     expect(raw).not.toBeNull()
-    expect(JSON.parse(raw).accessToken).toBe('jwt-access-token')
+    const stored = JSON.parse(raw)
+    expect(stored).toEqual(profile)
+    expect(stored).not.toHaveProperty('accessToken')
+    expect(stored).not.toHaveProperty('refreshToken')
+    expect(stored).not.toHaveProperty('expiresAt')
   })
 
-  it('getAccessToken возвращает токен активной сессии', () => {
-    saveSession(authResponse)
+  it('сессия активна, пока сохранён профиль (валидность проверяет сервер по куке)', () => {
+    expect(isSessionActive()).toBe(false)
 
-    expect(getAccessToken()).toBe('jwt-access-token')
+    saveSession(profile)
+
     expect(isSessionActive()).toBe(true)
   })
 
-  it('просроченная сессия считается неактивной, токен не выдаётся', () => {
-    saveSession({ ...authResponse, expires_in: -1 })
-
-    expect(isSessionActive()).toBe(false)
-    expect(getAccessToken()).toBeNull()
-  })
-
   it('clearSession удаляет сессию и уведомляет подписчиков', () => {
-    saveSession(authResponse)
+    saveSession(profile)
     const listener = vi.fn()
     const unsubscribe = subscribeSession(listener)
 
@@ -83,27 +67,28 @@ describe('session', () => {
     const listener = vi.fn()
     const unsubscribe = subscribeSession(listener)
 
-    saveSession(authResponse)
+    saveSession(profile)
 
     expect(listener).toHaveBeenCalledTimes(1)
 
     unsubscribe()
   })
 
-  it('getSessionRoles извлекает роли из realm_access.roles JWT', () => {
-    saveSession({ ...authResponse, access_token: makeJwt(['user', ROLE_VIP_USER]) })
+  it('hasRole читает роли из сохранённого профиля', () => {
+    saveSession({ ...profile, roles: ['user', ROLE_VIP_USER] })
 
-    expect(getSessionRoles()).toEqual(['user', ROLE_VIP_USER])
     expect(hasRole(ROLE_VIP_USER)).toBe(true)
     expect(hasRole('admin')).toBe(false)
   })
 
-  it('без сессии или с битым токеном ролей нет', () => {
-    expect(getSessionRoles()).toEqual([])
-
-    saveSession({ ...authResponse, access_token: 'not-a-jwt' })
-
-    expect(getSessionRoles()).toEqual([])
+  it('без сессии ролей нет', () => {
     expect(hasRole(ROLE_VIP_USER)).toBe(false)
+  })
+
+  it('профиль без поля roles трактуется как отсутствие ролей', () => {
+    saveSession({ id: 1, username: 'Тест', email: 'test@example.com' })
+
+    expect(hasRole(ROLE_VIP_USER)).toBe(false)
+    expect(getSessionSnapshot().roles).toEqual([])
   })
 })

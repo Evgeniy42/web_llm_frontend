@@ -1,11 +1,14 @@
 const STORAGE_KEY = 'web-llm:session'
 
+// В localStorage хранится только профиль пользователя { id, username, email, roles }.
+// Токены живут в HttpOnly-куках и фронтенду недоступны;
+// реальную валидность сессии определяет сервер (при 401 от API вызывается clearSession).
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    if (!parsed?.accessToken || !parsed?.user) return null
+    if (!parsed?.id) return null
     return parsed
   } catch {
     return null
@@ -24,60 +27,31 @@ export function subscribeSession(listener) {
   return () => listeners.delete(listener)
 }
 
-// Снапшот без побочных эффектов — безопасен для useSyncExternalStore.
-// Истечение токена проверяется в useAuth / getAccessToken.
+// Снапшот без побочных эффектов — безопасен для useSyncExternalStore
 export function getSessionSnapshot() {
   return session
 }
 
+// Локальный признак входа: наличие сохранённого профиля
 export function isSessionActive(current = session) {
-  return current !== null && current.expiresAt > Date.now()
+  return current !== null
 }
 
-export function getAccessToken() {
-  if (!isSessionActive()) return null
-  return session.accessToken
-}
-
-// Realm-роль Keycloak пользователя с подпиской (зашита в JWT при входе)
+// Realm-роль Keycloak пользователя с подпиской (приходит в ответе GET /user/me)
 export const ROLE_VIP_USER = 'vip_user'
 
-// Декодирует payload JWT без проверки подписи — подпись уже проверяет backend
-function decodeJwtPayload(token) {
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-    // atob отдаёт байты строкой — восстанавливаем UTF-8 перед JSON.parse
-    const json = decodeURIComponent(
-      Array.from(atob(base64))
-        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`)
-        .join(''),
-    )
-    return JSON.parse(json)
-  } catch {
-    return null
-  }
-}
-
-// Роли из claim realm_access.roles JWT активной сессии
-export function getSessionRoles(current = session) {
-  if (!isSessionActive(current)) return []
-  const payload = decodeJwtPayload(current.accessToken)
-  return payload?.realm_access?.roles ?? []
-}
-
 export function hasRole(role, current = session) {
-  return getSessionRoles(current).includes(role)
+  if (!isSessionActive(current)) return false
+  return (current.roles ?? []).includes(role)
 }
 
-// Принимает UserAuthResponseDTO бэкенда и сохраняет сессию.
-export function saveSession(auth) {
+// Принимает профиль из GET /user/me и сохраняет сессию.
+export function saveSession(profile) {
   session = {
-    user: { id: auth.id, username: auth.username, email: auth.email },
-    accessToken: auth.access_token,
-    refreshToken: auth.refresh_token ?? null,
-    expiresAt: Date.now() + auth.expires_in * 1000,
+    id: profile.id,
+    username: profile.username,
+    email: profile.email,
+    roles: profile.roles ?? [],
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
   notify()

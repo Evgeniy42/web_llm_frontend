@@ -11,21 +11,12 @@ vi.mock('../../src/services/userService', () => ({
   subscribe: vi.fn(),
 }))
 
-// Собирает ненастоящий JWT с заданными realm-ролями (подпись не проверяется на клиенте)
-function makeJwt(roles = []) {
-  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const payload = btoa(JSON.stringify({ sub: 'user-uuid', realm_access: { roles } }))
-  return `${header}.${payload}.signature`
-}
-
 function saveAuthSession(roles = []) {
   saveSession({
     id: 1,
     username: 'Ivan',
     email: 'ivan@mail.ru',
-    access_token: makeJwt(roles),
-    refresh_token: 'refresh-token',
-    expires_in: 3600,
+    roles,
   })
 }
 
@@ -38,13 +29,18 @@ function renderHeader() {
 }
 
 describe('Header', () => {
-  it('показывает логотип и ссылки авторизации', () => {
+  it('показывает логотип и ссылку входа', () => {
     renderHeader()
 
     expect(screen.getByText('Чат с LLM')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Чат с LLM/ })).toHaveAttribute('href', '/chat')
     expect(screen.getByRole('link', { name: 'Вход' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Регистрация' })).toHaveAttribute('href', '/register')
+  })
+
+  it('не показывает ссылки регистрации — регистрация происходит на странице Keycloak', () => {
+    renderHeader()
+
+    expect(screen.queryByRole('link', { name: 'Регистрация' })).not.toBeInTheDocument()
   })
 
   it('не показывает кнопку подписки без авторизации', () => {

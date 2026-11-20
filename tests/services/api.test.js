@@ -9,14 +9,11 @@ const jsonResponse = (data, { ok = true, status = 200 } = {}) =>
     json: () => Promise.resolve(data),
   })
 
-const authResponse = {
+const profile = {
   id: 1,
   username: 'Тест',
   email: 'test@example.com',
-  access_token: 'jwt-access-token',
-  token_type: 'Bearer',
-  expires_in: 3600,
-  refresh_token: null,
+  roles: ['user'],
 }
 
 describe('api', () => {
@@ -26,15 +23,16 @@ describe('api', () => {
     localStorage.clear()
   })
 
-  it('get отправляет запрос на относительный путь /api/v1', async () => {
-    fetch.mockReturnValue(jsonResponse({ id: 1 }))
+  it('get отправляет запрос на относительный путь /api/v1 с cookie-сессией', async () => {
+    fetch.mockReturnValue(jsonResponse(profile))
 
-    const result = await get('/user/1')
+    const result = await get('/user/me')
 
-    expect(fetch).toHaveBeenCalledWith('/api/v1/user/1', {
+    expect(fetch).toHaveBeenCalledWith('/api/v1/user/me', {
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     })
-    expect(result).toEqual({ id: 1 })
+    expect(result).toEqual(profile)
   })
 
   it('post сериализует тело в JSON и выставляет метод POST', async () => {
@@ -45,14 +43,45 @@ describe('api', () => {
     expect(fetch).toHaveBeenCalledWith('/api/v1/chat/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ message: 'привет' }),
     })
+  })
+
+  it('post без данных отправляет запрос без тела', async () => {
+    fetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        status: 204,
+        json: () => Promise.reject(new Error('no body')),
+      }),
+    )
+
+    const result = await post('/user/logout')
+
+    expect(fetch).toHaveBeenCalledWith('/api/v1/user/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: undefined,
+    })
+    expect(result).toBeNull()
+  })
+
+  it('не добавляет заголовок Authorization — авторизация по HttpOnly-куке', async () => {
+    saveSession(profile)
+    fetch.mockReturnValue(jsonResponse(profile))
+
+    await get('/user/me')
+
+    const [, options] = fetch.mock.calls[0]
+    expect(options.headers).not.toHaveProperty('Authorization')
   })
 
   it('бросает ошибку с detail из тела ответа', async () => {
     fetch.mockReturnValue(jsonResponse({ detail: 'Не найдено' }, { ok: false, status: 404 }))
 
-    const error = await get('/user/999').catch((e) => e)
+    const error = await get('/user/me').catch((e) => e)
 
     expect(error).toBeInstanceOf(Error)
     expect(error.message).toBe('Не найдено')
@@ -74,36 +103,11 @@ describe('api', () => {
     expect(error.status).toBe(500)
   })
 
-  it('добавляет заголовок Authorization с access-токеном сессии', async () => {
-    saveSession(authResponse)
-    fetch.mockReturnValue(jsonResponse({ id: 1 }))
-
-    await get('/user/1')
-
-    expect(fetch).toHaveBeenCalledWith('/api/v1/user/1', {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer jwt-access-token',
-      },
-    })
-  })
-
-  it('не добавляет Authorization без активной сессии', async () => {
-    saveSession({ ...authResponse, expires_in: -1 })
-    fetch.mockReturnValue(jsonResponse({ id: 1 }))
-
-    await get('/user/1')
-
-    expect(fetch).toHaveBeenCalledWith('/api/v1/user/1', {
-      headers: { 'Content-Type': 'application/json' },
-    })
-  })
-
   it('сбрасывает сессию при ответе 401', async () => {
-    saveSession(authResponse)
+    saveSession(profile)
     fetch.mockReturnValue(jsonResponse({ detail: 'Unauthorized' }, { ok: false, status: 401 }))
 
-    await get('/user/1').catch(() => {})
+    await get('/user/me').catch(() => {})
 
     expect(getSessionSnapshot()).toBeNull()
     expect(localStorage.getItem('web-llm:session')).toBeNull()
@@ -118,7 +122,7 @@ describe('api', () => {
       }),
     )
 
-    const result = await post('/user/logout', { refresh_token: 'jwt-refresh-token' })
+    const result = await post('/user/logout')
 
     expect(result).toBeNull()
   })

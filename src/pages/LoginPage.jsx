@@ -1,39 +1,10 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
-import { useAuth } from '../hooks/useAuth'
 
+// Вход и регистрация происходят на странице Keycloak, поэтому вместо формы —
+// обычные ссылки (full-page навигация): backend отвечает 302 в Keycloak.
+// На странице входа Keycloak есть ссылка «Register» для создания аккаунта.
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Вход через Google — полный переход браузера на OAuth-эндпоинт backend'а
-  // (дальше цепочка 302 через Keycloak/Google с cookie, поэтому не fetch)
-  const handleGoogleLogin = () => {
-    window.location.href = '/api/v1/user/login/google'
-  }
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    setError('')
-    setIsSubmitting(true)
-
-    try {
-      await login({ email: email.trim(), password })
-      navigate('/chat')
-    } catch (err) {
-      setError(err.message || 'Не удалось войти. Проверьте данные и попробуйте снова.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
     <div className="app">
       <Header />
@@ -42,43 +13,13 @@ export default function LoginPage() {
           <h1 className="auth__title">Вход</h1>
           <p className="auth__subtitle">Войдите, чтобы продолжить диалог с нейросетью</p>
 
-          <form className="auth__form" onSubmit={handleSubmit}>
-            <label className="auth__field">
-              <span className="auth__label">Email</span>
-              <input
-                className="auth__input"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-              />
-            </label>
-
-            <label className="auth__field">
-              <span className="auth__label">Пароль</span>
-              <input
-                className="auth__input"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Введите пароль"
-                autoComplete="current-password"
-                required
-              />
-            </label>
-
-            {error && <p className="auth__error">{error}</p>}
-
-            <button type="submit" className="btn btn--primary auth__submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Входим…' : 'Войти'}
-            </button>
-          </form>
+          <a className="btn btn--primary auth__submit auth__submit--link" href="/api/v1/user/login">
+            Войти по паролю
+          </a>
 
           <div className="auth__divider">или</div>
 
-          <button type="button" className="btn btn--google auth__google" onClick={handleGoogleLogin}>
+          <a className="btn btn--google auth__google" href="/api/v1/user/login/google">
             <svg className="auth__google-icon" viewBox="0 0 48 48" aria-hidden="true">
               <path
                 fill="#EA4335"
@@ -98,13 +39,13 @@ export default function LoginPage() {
               />
             </svg>
             Войти через Google
-          </button>
+          </a>
 
           <p className="auth__hint">
             Нет аккаунта?{' '}
-            <Link className="auth__link" to="/register">
+            <a className="auth__link" href="/api/v1/user/login">
               Зарегистрироваться
-            </Link>
+            </a>
           </p>
         </div>
       </main>

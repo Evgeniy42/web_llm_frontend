@@ -714,6 +714,12 @@
   text-decoration: none;
 }
 
+/* Кнопка-ссылка входа вне формы (full-page навигация на Keycloak) */
+.auth__submit--link {
+  width: 100%;
+  margin-top: 24px;
+}
+
 .auth__hint {
   margin-top: 20px;
   font-size: 14px;

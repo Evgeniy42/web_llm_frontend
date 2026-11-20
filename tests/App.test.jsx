@@ -7,13 +7,6 @@ vi.mock('../src/services/chatService', () => ({
   sendMessage: vi.fn(),
 }))
 
-// Собирает ненастоящий JWT с заданными realm-ролями (подпись не проверяется на клиенте)
-function makeJwt(roles = []) {
-  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const payload = btoa(JSON.stringify({ sub: 'user-uuid', realm_access: { roles } }))
-  return `${header}.${payload}.signature`
-}
-
 describe('App', () => {
   afterEach(() => {
     clearSession()
@@ -37,9 +30,7 @@ describe('App', () => {
       id: 1,
       username: 'Ivan',
       email: 'ivan@mail.ru',
-      access_token: makeJwt(['user']),
-      refresh_token: 'refresh-token',
-      expires_in: 3600,
+      roles: ['user'],
     })
     window.history.pushState({}, '', '/chat')
 
