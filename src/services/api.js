@@ -3,7 +3,12 @@ import { clearSession } from './session'
 // Авторизация — по HttpOnly-куке, которую backend ставит после входа через Keycloak.
 // Поэтому все запросы идут с credentials: 'include' и БЕЗ заголовка Authorization.
 async function request(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  // Для multipart-форм (FormData) Content-Type не задаём:
+  // браузер сам выставит multipart/form-data с boundary
+  const isFormData = options.body instanceof FormData
+  const headers = isFormData
+    ? { ...options.headers }
+    : { 'Content-Type': 'application/json', ...options.headers }
 
   const response = await fetch(`/api/v1${path}`, {
     ...options,
@@ -39,5 +44,13 @@ export function post(path, data) {
   return request(path, {
     method: 'POST',
     body: data === undefined ? undefined : JSON.stringify(data),
+  })
+}
+
+// POST с multipart-формой (загрузка файлов)
+export function postForm(path, formData) {
+  return request(path, {
+    method: 'POST',
+    body: formData,
   })
 }

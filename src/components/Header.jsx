@@ -5,7 +5,7 @@ import { subscribe } from '../services/userService'
 
 export default function Header() {
   const navigate = useNavigate()
-  const { user, isAuthenticated, hasSubscription, logout } = useAuth()
+  const { user, isAuthenticated, hasSubscription, isAdmin, logout } = useAuth()
   const [isSubscribing, setIsSubscribing] = useState(false)
   const [subscriptionNotice, setSubscriptionNotice] = useState(null)
 
@@ -32,20 +32,27 @@ export default function Header() {
   return (
     <>
       <header className="header">
-        <Link to="/chat" className="header__logo" aria-label="Чат с LLM — на главную">
-          <svg
-            className="header__logo-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span className="header__logo-text">Чат с LLM</span>
-        </Link>
+        <div className="header__left">
+          <Link to="/chat" className="header__logo" aria-label="RAG-система — на главную">
+            <svg
+              className="header__logo-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="header__logo-text">RAG-система</span>
+          </Link>
+          {isAdmin && (
+            <Link to="/rag-upload" className="btn btn--ghost header__nav-link">
+              Загрузка данных в бд
+            </Link>
+          )}
+        </div>
         {isAuthenticated ? (
           <div className="header__user">
             {hasSubscription ? (

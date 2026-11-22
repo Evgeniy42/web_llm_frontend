@@ -32,8 +32,8 @@ describe('Header', () => {
   it('показывает логотип и ссылку входа', () => {
     renderHeader()
 
-    expect(screen.getByText('Чат с LLM')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Чат с LLM/ })).toHaveAttribute('href', '/chat')
+    expect(screen.getByText('RAG-система')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /RAG-система/ })).toHaveAttribute('href', '/chat')
     expect(screen.getByRole('link', { name: 'Вход' })).toHaveAttribute('href', '/login')
   })
 
@@ -95,6 +95,35 @@ describe('Header (авторизованный пользователь)', () =>
     await userEvent.click(screen.getByRole('button', { name: 'Получить подписку' }))
 
     expect(await screen.findByText('HTTP 500')).toBeInTheDocument()
+  })
+})
+
+describe('Header (кнопка загрузки в БД)', () => {
+  afterEach(() => {
+    clearSession()
+  })
+
+  it('не показывает кнопку без авторизации', () => {
+    renderHeader()
+
+    expect(screen.queryByRole('link', { name: 'Загрузка данных в бд' })).not.toBeInTheDocument()
+  })
+
+  it('не показывает кнопку обычному пользователю', () => {
+    saveAuthSession(['user', 'vip_user'])
+    renderHeader()
+
+    expect(screen.queryByRole('link', { name: 'Загрузка данных в бд' })).not.toBeInTheDocument()
+  })
+
+  it('показывает кнопку администратору рядом с логотипом', () => {
+    saveAuthSession(['user', 'admin'])
+    renderHeader()
+
+    expect(screen.getByRole('link', { name: 'Загрузка данных в бд' })).toHaveAttribute(
+      'href',
+      '/rag-upload',
+    )
   })
 })
 

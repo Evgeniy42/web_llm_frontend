@@ -26,7 +26,30 @@ describe('Chat', () => {
     expect(screen.getByText('Привет')).toBeInTheDocument()
     expect(screen.getByText('Здравствуйте')).toBeInTheDocument()
     expect(screen.getByText('Вы')).toBeInTheDocument()
-    expect(screen.getByText('Нейросеть')).toBeInTheDocument()
+    expect(screen.getByText('GLM')).toBeInTheDocument()
+  })
+
+  it('рендерит markdown в сообщениях бота', () => {
+    const chatWithMarkdown = {
+      id: 1,
+      title: 'Чат',
+      messages: [
+        {
+          id: 1,
+          text: 'Вот **жирный** текст\n\n- пункт 1\n- пункт 2\n\n`код`',
+          sender: 'bot',
+          timestamp: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }
+
+    render(<Chat chat={chatWithMarkdown} onSendMessage={() => {}} isLoading={false} />)
+
+    expect(screen.getByText('жирный')).toBeInTheDocument()
+    expect(screen.getByText('пункт 1')).toBeInTheDocument()
+    expect(screen.getByText('код')).toBeInTheDocument()
+    expect(screen.getByText('жирный').tagName).toBe('STRONG')
+    expect(screen.getByText('код').tagName).toBe('CODE')
   })
 
   it('отправляет сообщение и очищает поле ввода', async () => {

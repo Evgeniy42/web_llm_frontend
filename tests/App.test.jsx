@@ -18,7 +18,7 @@ describe('App', () => {
     render(<App />)
 
     expect(window.location.pathname).toBe('/chat')
-    expect(await screen.findByText('Чат с LLM')).toBeInTheDocument()
+    expect(await screen.findByText('RAG-система')).toBeInTheDocument()
     expect(
       screen.getByText('Чтобы продолжить, нужно войти или зарегистрироваться'),
     ).toBeInTheDocument()

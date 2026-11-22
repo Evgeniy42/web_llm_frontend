@@ -40,6 +40,9 @@ export function isSessionActive(current = session) {
 // Realm-роль Keycloak пользователя с подпиской (приходит в ответе GET /user/me)
 export const ROLE_VIP_USER = 'vip_user'
 
+// Realm-роль Keycloak администратора: доступ к загрузке документов в векторную БД
+export const ROLE_ADMIN = 'admin'
+
 export function hasRole(role, current = session) {
   if (!isSessionActive(current)) return false
   return (current.roles ?? []).includes(role)

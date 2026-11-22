@@ -6,6 +6,7 @@ import {
   isSessionActive,
   hasRole,
   ROLE_VIP_USER,
+  ROLE_ADMIN,
   clearSession,
 } from '../services/session'
 
@@ -15,6 +16,8 @@ export function useAuth() {
   // Роли приходят в ответе GET /user/me и сохраняются в профиле;
   // после оформления подписки роль vip_user появится здесь после повторного входа
   const hasSubscription = isAuthenticated && hasRole(ROLE_VIP_USER, session)
+  // Роль admin: загрузка документов в векторную БД и прочие админ-функции
+  const isAdmin = isAuthenticated && hasRole(ROLE_ADMIN, session)
 
   const logout = async () => {
     // Локальную сессию завершаем в любом случае,
@@ -32,6 +35,7 @@ export function useAuth() {
     user: isAuthenticated ? session : null,
     isAuthenticated,
     hasSubscription,
+    isAdmin,
     logout,
   }
 }
