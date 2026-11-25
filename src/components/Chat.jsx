@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function Chat({ chat, onSendMessage, scrollToMessageId, isLoading }) {
   const [input, setInput] = useState('')
@@ -74,9 +76,15 @@ export default function Chat({ chat, onSendMessage, scrollToMessageId, isLoading
               </div>
               <div className="message__content">
                 <span className="message__sender">
-                  {msg.sender === 'user' ? 'Вы' : 'Нейросеть'}
+                  {msg.sender === 'user' ? 'Вы' : 'GLM'}
                 </span>
-                <p className="message__text">{msg.text}</p>
+                {msg.sender === 'bot' ? (
+                  <div className="message__text message__text--md">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="message__text">{msg.text}</p>
+                )}
               </div>
             </div>
           ))
@@ -99,7 +107,7 @@ export default function Chat({ chat, onSendMessage, scrollToMessageId, isLoading
               </svg>
             </div>
             <div className="message__content">
-              <span className="message__sender">Нейросеть</span>
+              <span className="message__sender">GLM</span>
               <div className="message__text message__text--loading">
                 <span className="loading-dot" />
                 <span className="loading-dot" />

@@ -1,13 +1,19 @@
 import { post, get } from './api'
 
-export async function register({ username, email, password }) {
-  return post('/user/register', { username, email, password })
+// Вход/регистрация происходят на стороне Keycloak:
+// GET /user/login и GET /user/login/google — это full-page навигация (<a href>),
+// а не fetch, поэтому здесь их нет.
+
+// Профиль текущего пользователя по сессионной куке
+export async function getMe() {
+  return get('/user/me')
 }
 
-export async function login({ email, password }) {
-  return post('/user/login', { email, password })
+// Серверный logout сбрасывает HttpOnly-куки; тело запроса не нужно
+export async function logout() {
+  return post('/user/logout')
 }
 
-export async function getUserById(userId) {
-  return get(`/user/${userId}`)
+export async function subscribe() {
+  return post('/user/subscription')
 }
